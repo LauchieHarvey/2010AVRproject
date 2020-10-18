@@ -19,10 +19,11 @@ int main(int argc, char** argv) {
     while (1) {
 	cc ^= 1; // Toggle the digit that gets displayed this iteration.
 
+	// When CC == 1, it will display on the right digit.
 	if (cc) {
-	    PORTA = waterLevels[ERROR_WATER];
+	    PORTA = waterLevelsSeg[ERROR_WATER_SEG];
 	} else {
-	    PORTA = modes[EXTENDED_MODE];
+	    PORTA = modesSeg[NORMAL_MODE_SEG];
 	}
         // delay to prevent ghosting
 	for (int i = 0; i < 1000; i++);
