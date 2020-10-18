@@ -28,8 +28,10 @@ enum Cycles {
 
 uint8_t get_water_level();
 
+uint8_t get_mode();
+
 void set_segment_display(int* cc);
 
-uint8_t get_mode();
+void configure_pins();
 
 #endif
