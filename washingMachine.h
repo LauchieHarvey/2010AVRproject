@@ -3,28 +3,19 @@
 
 // WATER LEVEL DEFINITIONS ===================================================
 #define LOW_WATER_SEG_VAL 8
-#define LOW_WATER_SEG 0
 #define MEDIUM_WATER_SEG_VAL 64
-#define MEDIUM_WATER_SEG 1
 #define HIGH_WATER_SEG_VAL 1
-#define HIGH_WATER_SEG 2
 #define ERROR_WATER_SEG_VAL 121
-#define ERROR_WATER_SEG 3
 
 int waterLevelsSeg[4] = {LOW_WATER_SEG_VAL, MEDIUM_WATER_SEG_VAL,
     HIGH_WATER_SEG_VAL, ERROR_WATER_SEG_VAL};
 
-// OPERATIONAL MODE DEFINITIONS
+// OPERATIONAL MODE DEFINITIONS ==============================================
 
 #define NORMAL_MODE_SEG_VAL 84
-#define NORMAL_MODE_SEG 0
 #define EXTENDED_MODE_SEG_VAL 121
-#define EXTENDED_MODE_SEG 1
 
 int modesSeg[2] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
-
-#define NORMAL_MODE NORMAL_MODE
-#define EXTENDED_MODE EXTENDED_MODE
 
 enum Cycles {
     WASH,
@@ -32,4 +23,11 @@ enum Cycles {
     RINSE2,
     SPIN
 } cycles;
+
+// FUNCTION DEFINITIONS ======================================================
+
+int get_water_level();
+
+void set_segment_display(int* cc);
+
 #endif
