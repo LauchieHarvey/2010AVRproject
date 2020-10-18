@@ -10,11 +10,10 @@ void set_segment_display(int* cc) {
 
     // When CC == 1, it will display the water level on the right digit.
     if (*cc) {
-	int selectedWaterLevel = get_water_level();
-	PORTA = waterLevelsSeg[selectedWaterLevel];
+	PORTA = waterLevelsSeg[get_water_level()];
 
     } else {
-	PORTA = modesSeg[0];
+	PORTA = modesSeg[get_mode()];
     }
     // delay to prevent ghosting
     for (int i = 0; i < 1000; i++);
@@ -22,12 +21,18 @@ void set_segment_display(int* cc) {
     PORTC = (*cc << PC0); 
 }
 
-// The value of S0 and S1 as an integer between 0 and 3.
-// The value represents the index of the water level that
-// has been selected.
-int get_water_level() {
-    uint8_t waterLevel = (PINC & (1 << PC2 | 1 << PC1)) >> 1;
-    return waterLevel;
+// Returns the value of S0 and S1 as an integer between 0 and 3.
+// The value represents the index of the water level that has been selected. 
+// Needs to be shifted right one bit to compensate for position in PORTC.
+uint8_t get_water_level() {
+    return (PINC & (1 << PC2 | 1 << PC1)) >> 1;
+}
+
+// Returns the value of S3 as an integer, either 0 or 1. This is the index of
+// the operation mode that has been selected. Needs to be shifted right by 3
+// bits to compensate for its position in PORTC.
+uint8_t get_mode() {
+    return (PINC & (1 << PC3)) >> 3;
 }
 
 int main(int argc, char** argv) {

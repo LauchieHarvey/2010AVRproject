@@ -26,8 +26,10 @@ enum Cycles {
 
 // FUNCTION DEFINITIONS ======================================================
 
-int get_water_level();
+uint8_t get_water_level();
 
 void set_segment_display(int* cc);
+
+uint8_t get_mode();
 
 #endif
