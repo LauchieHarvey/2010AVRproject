@@ -4,12 +4,12 @@
 #include "washingMachine.h"
 
 int main(int argc, char** argv) {
+    // Port A is output for Seven Seg Display values.
     DDRA = 0xFF;
     DDRB = (1 << PB3);
     DDRC = (1 << PC0 | 1 << PC1 | 1 << PC2);
 
     OCR0A = 255;
-
     // Set timer counter to toggle OC0B on compare match
     // and set wave form generation mode to CTC 
     TCCR0A = 1 << WGM01 | 0 << WGM00 | 0 << COM0A1 | 1 << COM0A0;
@@ -17,11 +17,12 @@ int main(int argc, char** argv) {
     
     int cc = 0;
     while (1) {
-	cc ^= 1;
+	cc ^= 1; // Toggle the digit that gets displayed this iteration.
+
 	if (cc) {
 	    PORTA = waterLevels[ERROR_WATER];
 	} else {
-	    PORTA = waterLevels[MEDIUM_WATER];
+	    PORTA = modes[EXTENDED_MODE];
 	}
         // delay to prevent ghosting
 	for (int i = 0; i < 1000; i++);
