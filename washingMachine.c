@@ -5,8 +5,8 @@
 
 int main(int argc, char** argv) {
     DDRA = 0xFF;
-    DDRB = (1 << 3);
-    DDRC = (1 << 0);
+    DDRB = (1 << PB3);
+    DDRC = (1 << PC0 | 1 << PC1 | 1 << PC2);
 
     OCR0A = 255;
 
