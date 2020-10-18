@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     while (1) {
 	cc ^= 1;
 	if (cc) {
-	    PORTA = waterLevels[LOW_WATER];
+	    PORTA = waterLevels[ERROR_WATER];
 	} else {
 	    PORTA = waterLevels[MEDIUM_WATER];
 	}
