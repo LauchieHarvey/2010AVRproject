@@ -15,6 +15,9 @@ int waterLevelsSeg[4] = {LOW_WATER_SEG_VAL, MEDIUM_WATER_SEG_VAL,
 #define NORMAL_MODE_SEG_VAL 84
 #define EXTENDED_MODE_SEG_VAL 121
 
+#define NORMAL_MODE 0
+#define EXTENDED_MODE 1
+
 int modesSeg[2] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
 
 enum Cycles {

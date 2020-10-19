@@ -44,8 +44,7 @@ uint8_t get_water_level() {
 }
 
 // Returns the value of S3 as an integer, either 0 or 1. This is the index of
-// the operation mode that has been selected. Needs to be shifted right by 3
-// bits to compensate for its position in PORTC.
+// the operation mode that has been selected. 0 == Normal mode, 1 == Extended 
 uint8_t get_mode() {
     return (PINC & (1 << PC3)) >> PC3;
 }
@@ -73,7 +72,7 @@ void configure_pins() {
 void update_led_pattern(bool runLeft) { 
     PORTB = (1 << ledArrayVal);
     // Skip every second time count to make it more visible.
-    if (timeCount % 2 == 0) {	
+    if (timeCount % 4 == 0) {	
 	if (runLeft) {
 	    ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
 	} else {
@@ -83,7 +82,7 @@ void update_led_pattern(bool runLeft) {
 }
 
 // Runs LEDs in right and left directions.
-void update_led_pattern_rinse() {
+void update_led_pattern_spin() {
     if (timeCount % 6 < 3) {
 	update_led_pattern(true);   
     } else {
@@ -140,21 +139,31 @@ ISR(TIMER1_COMPA_vect) {
     if (!machineStarted) {
 	return; 
     }
+
     // WASH cycle
     if (count_to_seconds(timeCount) < 3) {
 	update_led_pattern(true);
+	++timeCount;
+	return;
     } else if (count_to_seconds(timeCount) >= 3) {
 	PORTB = 0;
-    } 
-    // RINSE cycle
-    if (count_to_seconds(timeCount) < 6) {
-	update_led_pattern_rinse();
-    } else if (count_to_seconds(timeCount) < 9) {
-	// blink for 3 seconds	
-	PORTB = (timeCount % 20 < 10) ? 0xFF : 0;
-    } else {
-	PORTB = 0;
     }
-    
+
+    // RINSE CYCLE
+    if ((count_to_seconds(timeCount) < 12 && count_to_seconds(timeCount) > 9 &&
+	    machineMode == EXTENDED_MODE) || count_to_seconds(timeCount) < 6) {
+
+	update_led_pattern(false);	
+	++timeCount;
+	return;
+
+    } else if ((count_to_seconds(timeCount) < 15 && machineMode == EXTENDED_MODE) ||
+	    count_to_seconds(timeCount) < 9) {
+
+	// blink for 3 seconds	
+	PORTB = (timeCount % 20 < 10) ? 0x0F : 0;
+	++timeCount;
+	return;
+    }  
     ++timeCount; 
 }
