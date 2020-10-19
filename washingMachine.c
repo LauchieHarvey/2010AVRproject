@@ -15,7 +15,7 @@ volatile uint8_t ledArrayVal = 0;
 
 volatile bool machineStarted = false;
 
-// 0 == normal, 1 == extended. Normal by default
+// 0 == normal, 1 == extended, 2 == finished. Normal by default
 volatile uint8_t machineMode = 0;
 
 
@@ -40,12 +40,18 @@ void set_segment_display() {
 // The value represents the index of the water level that has been selected. 
 // Needs to be shifted right one bit to compensate for position in PORTC.
 uint8_t get_water_level() {
+    if ((machineMode) == CYCLES_FINISHED_MODE) {
+	return CYCLES_FINISHED_WATER;
+    }   
     return (PINC & (1 << PC2 | 1 << PC1)) >> PC1;
 }
 
 // Returns the value of S3 as an integer, either 0 or 1. This is the index of
 // the operation mode that has been selected. 0 == Normal mode, 1 == Extended 
 uint8_t get_mode() {
+    if ((machineMode) == CYCLES_FINISHED_MODE) {
+	return CYCLES_FINISHED_MODE;
+    }
     return (PINC & (1 << PC3)) >> PC3;
 }
 
@@ -83,7 +89,7 @@ void update_led_pattern(bool runLeft) {
 
 // Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if (count_to_seconds(timeCount) % 8 * DELAY_CONSTANT < 4 * DELAY_CONSTANT ) {
+    if (timeCount % 4 * DELAY_CONSTANT < 2 * DELAY_CONSTANT ) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);
@@ -161,7 +167,7 @@ ISR(TIMER1_COMPA_vect) {
 	    count_to_seconds(timeCount) < 9) {
 
 	// blink for 3 seconds	
-	PORTB = (timeCount % DELAY_CONSTANT < DELAY_CONSTANT / 2) ? 0x0F : 0;
+	PORTB = (timeCount % DELAY_CONSTANT < DELAY_CONSTANT / 4) ? 0x0F : 0;
 	++timeCount;
 	return;
     }
@@ -173,5 +179,8 @@ ISR(TIMER1_COMPA_vect) {
 	++timeCount;
 	return;
     }
+    
+    // If it reaches this point it's because all of the cycles have finished.
+    machineMode = CYCLES_FINISHED_MODE;    
     ++timeCount; 
 }
