@@ -7,11 +7,9 @@
 #define HIGH_WATER_SEG_VAL 1
 #define ERROR_WATER_SEG_VAL 121
 
-#define CYCLES_FINISHED_WATER 4
-#define CYCLES_FINISHED_SEG_VAL 63
 
 int waterLevelsSeg[5] = {LOW_WATER_SEG_VAL, MEDIUM_WATER_SEG_VAL,
-    HIGH_WATER_SEG_VAL, ERROR_WATER_SEG_VAL, CYCLES_FINISHED_SEG_VAL};
+    HIGH_WATER_SEG_VAL, ERROR_WATER_SEG_VAL};
 
 // OPERATIONAL MODE DEFINITIONS ==============================================
 
@@ -22,8 +20,7 @@ int waterLevelsSeg[5] = {LOW_WATER_SEG_VAL, MEDIUM_WATER_SEG_VAL,
 #define EXTENDED_MODE 1
 #define CYCLES_FINISHED_MODE 2
 
-int modesSeg[3] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL,
-    CYCLES_FINISHED_SEG_VAL};
+int modesSeg[3] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
 
 enum Cycles {
     WASH,
@@ -35,6 +32,9 @@ enum Cycles {
 // MISC DEFINITIONs ==========================================================
 
 #define DELAY_CONSTANT 8
+
+#define CYCLES_FINISHED_SEG_VAL 63
+
 
 // FUNCTION DEFINITIONS ======================================================
 

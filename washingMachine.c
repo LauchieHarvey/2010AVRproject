@@ -25,7 +25,9 @@ void set_segment_display() {
     sevenSegCC ^= 1; // Toggle the digit that gets displayed this iteration.
 
     // When CC == 1, it will display the water level on the right digit.
-    if (sevenSegCC) {
+    if (machineMode == CYCLES_FINISHED_MODE) {
+	PORTA = CYCLES_FINISHED_SEG_VAL;
+    } else if (sevenSegCC) {
 	PORTA = waterLevelsSeg[get_water_level()];
     } else {
 	PORTA = modesSeg[get_mode()];
@@ -39,19 +41,13 @@ void set_segment_display() {
 // Returns the value of S0 and S1 as an integer between 0 and 3.
 // The value represents the index of the water level that has been selected. 
 // Needs to be shifted right one bit to compensate for position in PORTC.
-uint8_t get_water_level() {
-    if ((machineMode) == CYCLES_FINISHED_MODE) {
-	return CYCLES_FINISHED_WATER;
-    }   
+uint8_t get_water_level() {   
     return (PINC & (1 << PC2 | 1 << PC1)) >> PC1;
 }
 
 // Returns the value of S3 as an integer, either 0 or 1. This is the index of
 // the operation mode that has been selected. 0 == Normal mode, 1 == Extended 
 uint8_t get_mode() {
-    if ((machineMode) == CYCLES_FINISHED_MODE) {
-	return CYCLES_FINISHED_MODE;
-    }
     return (PINC & (1 << PC3)) >> PC3;
 }
 
@@ -135,14 +131,17 @@ int main(int argc, char** argv) {
 
 // Event handler for the "start" button (B0 on IO board)
 ISR(INT0_vect) {
-    machineStarted = true;
-    machineMode = get_mode();
+    if (!machineStarted || machineMode == CYCLES_FINISHED_MODE) {	
+	machineStarted = true;
+	machineMode = get_mode();
+	timeCount = 0;
+    }
 }
 
 // The timer triggers an interrupt every 10 milliseconds.
 ISR(TIMER1_COMPA_vect) { 
     set_segment_display();
-    if (!machineStarted) {
+    if (!machineStarted || machineMode == CYCLES_FINISHED_MODE) {
 	return; 
     }
 
@@ -181,6 +180,7 @@ ISR(TIMER1_COMPA_vect) {
     }
     
     // If it reaches this point it's because all of the cycles have finished.
-    machineMode = CYCLES_FINISHED_MODE;    
+    machineMode = CYCLES_FINISHED_MODE;
+    machineStarted = false;
     ++timeCount; 
 }
