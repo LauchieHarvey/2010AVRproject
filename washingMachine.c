@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <avr/io.h>
+#include <avr/interrupt.h>
 #include "washingMachine.h"
 
 // This will only display one digit each iteration. The next iteration
@@ -44,17 +45,63 @@ void configure_pins() {
     //		PC3 is switch 2 which controls operation mode.	 
     //		PC0 is the output that determines which ssd digit will be
     //		    displayed this iteration. (left or right)
-    DDRC = (0 << PC3 | 0 << PC2 | 0 << PC1 | 1 << PC0);
+    //          PC6 is for the button interrupt signal.
+    DDRC = (1 << PC6 | 0 << PC3 | 0 << PC2 | 0 << PC1 | 1 << PC0);
+
+    // Port D: PD0 through PD4 are outputs for the LEDS on the IO board.
+    DDRB = (1 << PB4 | 1 << PB3 | 1 << PB2 | 1 << PB1 | 1 << PB0);
+
+    DDRD = (0 << PD2);
+}
+
+void make_led_pattern() {
+    uint8_t ledNum = 0;
+    while (1) {
+	PORTD = (1 << ledNum);
+	ledNum = (ledNum >= 3) ? 0 : ledNum + 1;
+	for (uint16_t i = 0; i < 60000; i++);
+    }
+}
+
+void configure_timer() {
+    /* Set up timer/counter 1 so that we get an 
+    ** interrupt 100 times per second, i.e. every
+    ** 10 milliseconds.
+    */
+    OCR1A = 9999; /* Clock divided by 8 - count for 10000 cycles */
+    TCCR1A = 0; /* CTC mode */
+    TCCR1B = (1 << WGM12) | (1 << CS11); /* Divide clock by 8 */
+
+    // Enable interrupt on timer on output compare match 
+    TIMSK1 = (1 << OCIE1A); 
+
+    // Ensure interrupt flag is cleared
+    TIFR1 = (1 << OCF1A); 
+	
+    // Set up interrupt to occur on rising edge of pin PC6 (start/stop button)
+    EICRA = (1 << ISC01) | (1 << ISC00);
+    EIMSK = (1 << INT0);
+    EIFR = (1 << INTF0);
+
+    // Turn on global interrupts
+    sei(); 
 }
 
 int main(int argc, char** argv) {
 
     configure_pins();
+    configure_timer();
    
     int cc = 0;
     while (1) {
 	set_segment_display(&cc);
-
+	
     }
+    make_led_pattern();
+   
     return 0;
+}
+
+ISR(INT0_vect) {
+    PORTB = 0xFF;
 }
