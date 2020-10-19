@@ -27,6 +27,10 @@ enum Cycles {
     SPIN
 } cycles;
 
+// MISC DEFINITIONs ==========================================================
+
+#define DELAY_CONSTANT 8
+
 // FUNCTION DEFINITIONS ======================================================
 
 uint8_t get_water_level();
@@ -36,5 +40,7 @@ uint8_t get_mode();
 void set_segment_display();
 
 void configure_pins();
+
+uint8_t count_to_seconds(uint16_t count);
 
 #endif

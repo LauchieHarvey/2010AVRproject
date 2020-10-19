@@ -71,8 +71,8 @@ void configure_pins() {
 // direction to increment in.
 void update_led_pattern(bool runLeft) { 
     PORTB = (1 << ledArrayVal);
-    // Skip every second time count to make it more visible.
-    if (timeCount % 4 == 0) {	
+    // Skip every few iterations to make it more visible.
+    if (timeCount % DELAY_CONSTANT == 0) {	
 	if (runLeft) {
 	    ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
 	} else {
@@ -83,7 +83,7 @@ void update_led_pattern(bool runLeft) {
 
 // Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if (timeCount % 32 < 16) {
+    if (count_to_seconds(timeCount) % 8 * DELAY_CONSTANT < 4 * DELAY_CONSTANT ) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);
@@ -161,15 +161,17 @@ ISR(TIMER1_COMPA_vect) {
 	    count_to_seconds(timeCount) < 9) {
 
 	// blink for 3 seconds	
-	PORTB = (timeCount % 20 < 10) ? 0x0F : 0;
+	PORTB = (timeCount % DELAY_CONSTANT < DELAY_CONSTANT / 2) ? 0x0F : 0;
 	++timeCount;
 	return;
-    }  
+    }
 
     // SPIN CYCLE
     if ((count_to_seconds(timeCount) < 18 && machineMode == EXTENDED_MODE) ||
 	(count_to_seconds(timeCount) < 15 && machineMode == NORMAL_MODE)) {
 	update_led_pattern_spin();
+	++timeCount;
+	return;
     }
     ++timeCount; 
 }
