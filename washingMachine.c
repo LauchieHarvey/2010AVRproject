@@ -81,9 +81,9 @@ void update_led_pattern(bool runLeft) {
     }
 }
 
-// Runs LEDs in right and left directions.
+// Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if (timeCount % 6 < 3) {
+    if (timeCount % 32 < 16) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);
@@ -140,7 +140,7 @@ ISR(TIMER1_COMPA_vect) {
 	return; 
     }
 
-    // WASH cycle
+    // WASH CYCLE 
     if (count_to_seconds(timeCount) < 3) {
 	update_led_pattern(true);
 	++timeCount;
@@ -165,5 +165,11 @@ ISR(TIMER1_COMPA_vect) {
 	++timeCount;
 	return;
     }  
+
+    // SPIN CYCLE
+    if ((count_to_seconds(timeCount) < 18 && machineMode == EXTENDED_MODE) ||
+	(count_to_seconds(timeCount) < 15 && machineMode == NORMAL_MODE)) {
+	update_led_pattern_spin();
+    }
     ++timeCount; 
 }
