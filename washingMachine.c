@@ -2,24 +2,38 @@
 #include <unistd.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <stdbool.h>
 #include "washingMachine.h"
+
+// CONTROL VARIABLES (GLOABAL VOLATILE) ======================================
+
+volatile uint8_t sevenSegCC = 0;
+
+volatile uint16_t timeCount = 0;
+
+volatile uint8_t ledArrayVal = 0;
+
+volatile bool machineStarted = false;
+
+// 0 == normal, 1 == extended. Normal by default
+volatile uint8_t machineMode = 0;
+
 
 // This will only display one digit each iteration. The next iteration
 // it will display the other.
-void set_segment_display(int* cc) {
-    *cc ^= 1; // Toggle the digit that gets displayed this iteration.
+void set_segment_display() {
+    sevenSegCC ^= 1; // Toggle the digit that gets displayed this iteration.
 
     // When CC == 1, it will display the water level on the right digit.
-    if (*cc) {
+    if (sevenSegCC) {
 	PORTA = waterLevelsSeg[get_water_level()];
-
     } else {
 	PORTA = modesSeg[get_mode()];
     }
     // delay to prevent ghosting
     for (int i = 0; i < 1000; i++);
     PORTA = 0;
-    PORTC = (*cc << PC0); 
+    PORTC = (sevenSegCC << PC0); 
 }
 
 // Returns the value of S0 and S1 as an integer between 0 and 3.
@@ -54,23 +68,36 @@ void configure_pins() {
     DDRD = (0 << PD2);
 }
 
-void make_led_pattern() {
-    uint8_t ledNum = 0;
-    while (1) {
-	PORTD = (1 << ledNum);
-	ledNum = (ledNum >= 3) ? 0 : ledNum + 1;
-	for (uint16_t i = 0; i < 60000; i++);
+// Makes LEDs run from right to left. Takes a parameter to determine the
+// direction to increment in.
+void update_led_pattern(bool runLeft) { 
+    PORTB = (1 << ledArrayVal);
+    // Skip every second time count to make it more visible.
+    if (timeCount % 2 == 0) {	
+	if (runLeft) {
+	    ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
+	} else {
+	    ledArrayVal = (ledArrayVal <= 0) ? 3 : ledArrayVal - 1;
+	}
     }
 }
 
+// Runs LEDs in right and left directions.
+void update_led_pattern_rinse() {
+    if (timeCount % 6 < 3) {
+	update_led_pattern(true);   
+    } else {
+	update_led_pattern(false);
+    }
+}
+
+// Set up timer/counter 1 so that we get an 
+// interrupt 100 times per second, i.e. every
+// 10 milliseconds.
 void configure_timer() {
-    /* Set up timer/counter 1 so that we get an 
-    ** interrupt 100 times per second, i.e. every
-    ** 10 milliseconds.
-    */
-    OCR1A = 9999; /* Clock divided by 8 - count for 10000 cycles */
-    TCCR1A = 0; /* CTC mode */
-    TCCR1B = (1 << WGM12) | (1 << CS11); /* Divide clock by 8 */
+    OCR1A = 9999; // Clock divided by 8 - count for 10000 cycles
+    TCCR1A = 0; // CTC mode
+    TCCR1B = (1 << WGM12) | (1 << CS11); // Divide clock by 8
 
     // Enable interrupt on timer on output compare match 
     TIMSK1 = (1 << OCIE1A); 
@@ -87,21 +114,47 @@ void configure_timer() {
     sei(); 
 }
 
+// Converts the time count to seconds.
+uint8_t count_to_seconds(uint16_t count) {
+    return count / 100;
+}
+
 int main(int argc, char** argv) {
 
     configure_pins();
     configure_timer();
    
-    int cc = 0;
-    while (1) {
-	set_segment_display(&cc);
-	
-    }
-    make_led_pattern();
-   
+    while (1); 
     return 0;
 }
 
+// Event handler for the "start" button (B0 on IO board)
 ISR(INT0_vect) {
-    PORTB = 0xFF;
+    machineStarted = true;
+    machineMode = get_mode();
+}
+
+// The timer triggers an interrupt every 10 milliseconds.
+ISR(TIMER1_COMPA_vect) { 
+    set_segment_display();
+    if (!machineStarted) {
+	return; 
+    }
+    // WASH cycle
+    if (count_to_seconds(timeCount) < 3) {
+	update_led_pattern(true);
+    } else if (count_to_seconds(timeCount) >= 3) {
+	PORTB = 0;
+    } 
+    // RINSE cycle
+    if (count_to_seconds(timeCount) < 6) {
+	update_led_pattern_rinse();
+    } else if (count_to_seconds(timeCount) < 9) {
+	// blink for 3 seconds	
+	PORTB = (timeCount % 20 < 10) ? 0xFF : 0;
+    } else {
+	PORTB = 0;
+    }
+    
+    ++timeCount; 
 }

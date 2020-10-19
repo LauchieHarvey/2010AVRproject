@@ -30,7 +30,7 @@ uint8_t get_water_level();
 
 uint8_t get_mode();
 
-void set_segment_display(int* cc);
+void set_segment_display();
 
 void configure_pins();
 
