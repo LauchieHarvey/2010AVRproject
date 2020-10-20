@@ -26,16 +26,16 @@ void set_segment_display() {
 
     // When CC == 1, it will display the water level on the right digit.
     if (machineMode == CYCLES_FINISHED_MODE) {
-	PORTA = CYCLES_FINISHED_SEG_VAL;
+	PORTA |= CYCLES_FINISHED_SEG_VAL;
     } else if (sevenSegCC) {
-	PORTA = waterLevelsSeg[get_water_level()];
+	PORTA |= waterLevelsSeg[get_water_level()];
     } else {
-	PORTA = modesSeg[get_mode()];
+	PORTA |= modesSeg[get_mode()];
     }
     // delay to prevent ghosting
     for (int i = 0; i < 1000; i++);
     PORTA = 0;
-    PORTC = (sevenSegCC << PC0); 
+    PORTA = (sevenSegCC << PA7);
 }
 
 // Returns the value of S0 and S1 as an integer between 0 and 3.
@@ -54,14 +54,12 @@ uint8_t get_mode() {
 // Sets the relevant pins to input or output depending on their purpose.
 void configure_pins() {
     // Port A is output for Seven Seg Display values.
-    DDRA = 0xFF;
+    DDRA = 0xFF; 
 
     // Port C:  PC1 && PC2 are switches 0 and 1 that control water level.
     //		PC3 is switch 2 which controls operation mode.	 
-    //		PC0 is the output that determines which ssd digit will be
-    //		    displayed this iteration. (left or right)
     //          PC6 is for the button interrupt signal.
-    DDRC = (1 << PC6 | 0 << PC3 | 0 << PC2 | 0 << PC1 | 1 << PC0);
+    DDRC = (1 << PC6 | 0 << PC3 | 0 << PC2 | 0 << PC1);
 
     // Port D: PD0 through PD4 are outputs for the LEDS on the IO board.
     DDRB = (1 << PB4 | 1 << PB3 | 1 << PB2 | 1 << PB1 | 1 << PB0);
