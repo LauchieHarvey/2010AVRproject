@@ -22,12 +22,9 @@ int waterLevelsSeg[5] = {LOW_WATER_SEG_VAL, MEDIUM_WATER_SEG_VAL,
 
 int modesSeg[3] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
 
-enum Cycles {
-    WASH,
-    RINSE,
-    RINSE2,
-    SPIN
-} cycles;
+#define WASH_DUTY_CYCLE 10
+#define RINSE_DUTY_CYCLE 50
+#define SPIN_DUTY_CYCLE 90
 
 // MISC DEFINITIONs ==========================================================
 

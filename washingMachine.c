@@ -27,6 +27,7 @@ void set_segment_display() {
     // When CC == 1, it will display the water level on the right digit.
     if (machineMode == CYCLES_FINISHED_MODE) {
 	PORTA |= CYCLES_FINISHED_SEG_VAL;
+	
     } else if (sevenSegCC) {
 	PORTA |= waterLevelsSeg[get_water_level()];
     } else {
@@ -89,13 +90,20 @@ void update_led_pattern_spin() {
     }
 }
 
+// Return the width of a pulse (in clock cycles) given a duty cycle (%) and
+// the period of the clock (measured in clock cycles)
+uint16_t duty_cycle_to_pulse_width(float dutycycle, uint16_t clockperiod) {
+	return clockperiod - ((dutycycle / 100) * clockperiod);
+}
+
 // Set up timer/counter 1 so that we get an 
 // interrupt 100 times per second, i.e. every
 // 10 milliseconds.
-void configure_timer() {
+void configure_timer1() {
     OCR1A = 9999; // Clock divided by 8 - count for 10000 cycles
-    TCCR1A = 0; // CTC mode
-    TCCR1B = (1 << WGM12) | (1 << CS11); // Divide clock by 8
+
+    TCCR1A = 0;
+    TCCR1B = (1 << WGM12 | 1 << CS11);
 
     // Enable interrupt on timer on output compare match 
     TIMSK1 = (1 << OCIE1A); 
@@ -112,6 +120,14 @@ void configure_timer() {
     sei(); 
 }
 
+void configure_timer0() {
+    // Set it to 255 so that it is off to start with.
+    OCR0B = 255;
+
+    TCCR0A = (0 << COM0A1 | 0 << COM0A0 | 1 << COM0B1 | 1 << COM0B0 | 1 << WGM01 | 1 << WGM00);
+    TCCR0B = (0 << WGM02 | 0 << CS02 | 0 << CS01 | 1 << CS00);
+}
+
 // Converts the time count to seconds.
 uint8_t count_to_seconds(uint16_t count) {
     return count / 100;
@@ -120,7 +136,8 @@ uint8_t count_to_seconds(uint16_t count) {
 int main(int argc, char** argv) {
 
     configure_pins();
-    configure_timer();
+    configure_timer1();
+    configure_timer0();
    
     while (1); 
     return 0;
@@ -144,6 +161,8 @@ ISR(TIMER1_COMPA_vect) {
 
     // WASH CYCLE 
     if (count_to_seconds(timeCount) < 3) {
+
+	OCR0B = duty_cycle_to_pulse_width(10, 255) - 1;
 	update_led_pattern(true);
 	++timeCount;
 	return;
@@ -155,6 +174,7 @@ ISR(TIMER1_COMPA_vect) {
     if ((count_to_seconds(timeCount) < 12 && count_to_seconds(timeCount) > 9 &&
 	    machineMode == EXTENDED_MODE) || count_to_seconds(timeCount) < 6) {
 
+	OCR0B = duty_cycle_to_pulse_width(RINSE_DUTY_CYCLE, 255) - 1;
 	update_led_pattern(false);	
 	++timeCount;
 	return;
@@ -171,12 +191,15 @@ ISR(TIMER1_COMPA_vect) {
     // SPIN CYCLE
     if ((count_to_seconds(timeCount) < 18 && machineMode == EXTENDED_MODE) ||
 	(count_to_seconds(timeCount) < 15 && machineMode == NORMAL_MODE)) {
+
+	OCR0B = duty_cycle_to_pulse_width(SPIN_DUTY_CYCLE, 255) - 1;
 	update_led_pattern_spin();
 	++timeCount;
 	return;
     }
     
     // If it reaches this point it's because all of the cycles have finished.
+    OCR0A = 255;
     machineMode = CYCLES_FINISHED_MODE;
     machineStarted = false;
     ++timeCount; 
