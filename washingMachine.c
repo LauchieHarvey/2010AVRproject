@@ -56,14 +56,13 @@ void configure_pins() {
     // Port A is output for Seven Seg Display values.
     DDRA = 0xFF; 
 
-    // Port C:  PC1 && PC2 are switches 0 and 1 that control water level.
-    //		PC3 is switch 2 which controls operation mode.	 
-    //          PC6 is for the button interrupt signal.
+    // PC6 is for the button interrupt signal.
     DDRC = (1 << PC6);
 
-    // Port D: PD0 through PD4 are outputs for the LEDS on the IO board.
+    // Port B: outputs for the LEDS on the IO board.
     DDRB = (1 << PB4 | 1 << PB3 | 1 << PB2 | 1 << PB1 | 1 << PB0);
 
+    // Port D: Switch output pins and Button 0
     DDRD = (0 << PD4 | 0 << PD2 | 0 << PD0 | 0 << PD1);
 }
 
