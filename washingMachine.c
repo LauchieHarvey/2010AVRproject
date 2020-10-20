@@ -63,8 +63,8 @@ void configure_pins() {
     // Port B: outputs for the LEDS on the IO board.
     DDRB = (1 << PB4 | 1 << PB3 | 1 << PB2 | 1 << PB1 | 1 << PB0);
 
-    // Port D: Switch output pins and Button 0
-    DDRD = (0 << PD4 | 0 << PD2 | 0 << PD0 | 0 << PD1);
+    // Port D: Switch output pins and Buttons
+    DDRD = (0 << PD4 | 0 << PD3 | 0 << PD2 | 0 << PD1 | 0 << PD0);
 }
 
 // Makes LEDs run from right to left. Takes a parameter to determine the
@@ -111,10 +111,10 @@ void configure_timer1() {
     // Ensure interrupt flag is cleared
     TIFR1 = (1 << OCF1A); 
 	
-    // Set up interrupt to occur on rising edge of pin PC6 (start/stop button)
-    EICRA = (1 << ISC01) | (1 << ISC00);
-    EIMSK = (1 << INT0);
-    EIFR = (1 << INTF0);
+    // Set up interrupt to occur on falling edge of pin PC6 (start/stop button)
+    EICRA = (1 << ISC11 | 0 << ISC10 | 1 << ISC01 | 0 << ISC00);
+    EIMSK = (1 << INT1 | 1 << INT0);
+    EIFR = (1 << INTF1 | 1 << INTF0);
 
     // Turn on global interrupts
     sei(); 
@@ -150,6 +150,15 @@ ISR(INT0_vect) {
 	machineMode = get_mode();
 	timeCount = 0;
     }
+}
+
+// Event handler for the "reset" button (B1 on IO board)
+ISR(INT1_vect) {
+    PORTB = 0;
+    OCR0B = 255;
+    machineStarted = false;
+    machineMode = get_mode();
+    timeCount = 0;
 }
 
 // The timer triggers an interrupt every 10 milliseconds.
@@ -199,7 +208,7 @@ ISR(TIMER1_COMPA_vect) {
     }
     
     // If it reaches this point it's because all of the cycles have finished.
-    OCR0A = 255;
+    OCR0B = 255;
     machineMode = CYCLES_FINISHED_MODE;
     machineStarted = false;
     ++timeCount; 
