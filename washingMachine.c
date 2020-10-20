@@ -42,13 +42,13 @@ void set_segment_display() {
 // The value represents the index of the water level that has been selected. 
 // Needs to be shifted right one bit to compensate for position in PORTC.
 uint8_t get_water_level() {   
-    return (PINC & (1 << PC2 | 1 << PC1)) >> PC1;
+    return (PIND & (1 << PD1 | 1 << PD0));
 }
 
 // Returns the value of S3 as an integer, either 0 or 1. This is the index of
 // the operation mode that has been selected. 0 == Normal mode, 1 == Extended 
 uint8_t get_mode() {
-    return (PINC & (1 << PC3)) >> PC3;
+    return (PIND & (1 << PD4)) >> PD4;
 }
 
 // Sets the relevant pins to input or output depending on their purpose.
@@ -59,12 +59,12 @@ void configure_pins() {
     // Port C:  PC1 && PC2 are switches 0 and 1 that control water level.
     //		PC3 is switch 2 which controls operation mode.	 
     //          PC6 is for the button interrupt signal.
-    DDRC = (1 << PC6 | 0 << PC3 | 0 << PC2 | 0 << PC1);
+    DDRC = (1 << PC6);
 
     // Port D: PD0 through PD4 are outputs for the LEDS on the IO board.
     DDRB = (1 << PB4 | 1 << PB3 | 1 << PB2 | 1 << PB1 | 1 << PB0);
 
-    DDRD = (0 << PD2);
+    DDRD = (0 << PD4 | 0 << PD2 | 0 << PD0 | 0 << PD1);
 }
 
 // Makes LEDs run from right to left. Takes a parameter to determine the
