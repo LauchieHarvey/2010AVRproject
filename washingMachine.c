@@ -70,8 +70,6 @@ void configure_pins() {
 // direction to increment in.
 void update_led_pattern(bool runLeft) { 
     PORTB = (1 << ledArrayVal);
-    // Introduce delay to make light change visible 
-    for (uint8_t i = 0; i < 100; ++i); 
 
     if (runLeft) {
         ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
@@ -82,7 +80,7 @@ void update_led_pattern(bool runLeft) {
 
 // Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if ((timeCount % (8 * DELAY_CONSTANT)) < (4 * DELAY_CONSTANT)) {
+    if ((timeCount % 6) < 3) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);
