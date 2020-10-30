@@ -83,7 +83,7 @@ void update_led_pattern(bool runLeft) {
 
 // Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if (timeCount % 4 * DELAY_CONSTANT < 2 * DELAY_CONSTANT ) {
+    if (timeCount % 8 * DELAY_CONSTANT < 4 * DELAY_CONSTANT ) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);

@@ -28,7 +28,7 @@ int modesSeg[3] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
 
 // MISC DEFINITIONs ==========================================================
 
-#define DELAY_CONSTANT 8
+#define DELAY_CONSTANT 15
 
 #define CYCLES_FINISHED_SEG_VAL 63
 
