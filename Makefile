@@ -16,4 +16,4 @@ flash: main
 
 
 clean:
-	rm *.hex *.o
+	rm *.o

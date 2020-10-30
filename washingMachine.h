@@ -26,12 +26,16 @@ int modesSeg[3] = {NORMAL_MODE_SEG_VAL, EXTENDED_MODE_SEG_VAL};
 #define RINSE_DUTY_CYCLE 50
 #define SPIN_DUTY_CYCLE 90
 
-// MISC DEFINITIONs ==========================================================
+// MISC DEFINITIONS ==========================================================
 
 #define DELAY_CONSTANT 15
 
 #define CYCLES_FINISHED_SEG_VAL 63
 
+#define PWM_CLOCK_PERIOD 9999
+
+// Function pointer for a cycle update function
+typedef void (*cycleFn)(void);
 
 // FUNCTION DEFINITIONS ======================================================
 

@@ -34,7 +34,7 @@ void set_segment_display() {
 	PORTA |= modesSeg[get_mode()];
     }
     // delay to prevent ghosting
-    for (int i = 0; i < 100; i++);
+    for (uint8_t i = 0; i < 100; ++i);
     PORTA = (sevenSegCC << PA7);
 }
 
@@ -89,15 +89,16 @@ void update_led_pattern_spin() {
 
 // Return the width of a pulse (in clock cycles) given a duty cycle (%) and
 // the period of the clock (measured in clock cycles)
-uint16_t duty_cycle_to_pulse_width(float dutycycle, uint16_t clockperiod) {
-	return clockperiod - ((dutycycle / 100) * clockperiod);
+uint16_t duty_cycle_to_pulse_width(float dutycycle) {
+	return (dutycycle / 100) * PWM_CLOCK_PERIOD;
 }
 
 // Set up timer/counter 1 so that we get an 
 // interrupt 12.5 times per second, i.e. every
 // 80 milliseconds.
 void configure_timer1() {
-    OCR1A = 9999; // Clock divided by 64 - count for 10000 cycles
+     // Clock divided by 64 - count for 10000 cycles
+    OCR1A = PWM_CLOCK_PERIOD;
 
     TCCR1A = 0;
     TCCR1B = (1 << WGM12 | 1 << CS11 | 1 << CS10);
@@ -142,6 +143,64 @@ int main(int argc, char** argv) {
     return 0;
 }
 
+// WASH CYCLE handles pwm and LED changes
+void wash_cycle() {
+
+    OCR0B = duty_cycle_to_pulse_width(WASH_DUTY_CYCLE) - 1;
+    update_led_pattern(true);
+}
+
+// First pattern of the rinse cycle, running LEDS to the right. PWM change. 
+void rinse_cycle_main() {
+
+    OCR0B = duty_cycle_to_pulse_width(RINSE_DUTY_CYCLE) - 1;
+    update_led_pattern(false);	
+}
+
+// blink for 3 seconds, occurs after the right running LED pattern.	
+void rinse_cycle_blink() {
+
+    PORTB = (timeCount % DELAY_CONSTANT < DELAY_CONSTANT / 4) ? 0x0F : 0;
+}
+
+// SPIN CYCLE
+void spin_cycle() {
+    uint8_t timeInSec = count_to_seconds(timeCount);
+    if (timeInSec == 18 || timeInSec == 15) {
+        // Clear the LED bits and then set the first bit to 1.
+        int mask = (1 << PB0 | 1 << PB1 | 1 << PB2 | 1 << PB3);
+        PORTB &= ~mask;
+        PORTB |= (1 << PB0);
+    }
+
+    OCR0B = duty_cycle_to_pulse_width(SPIN_DUTY_CYCLE) - 1;
+    update_led_pattern_spin();
+}
+
+// Function that looks at the time of the program to determine which cycle
+// should be runnning currently. Returns a pointer to the function that 
+// handles the cycle.
+cycleFn determine_cycle() {
+    if (count_to_seconds(timeCount) < 3) {
+        return wash_cycle;
+    } 
+    if ((count_to_seconds(timeCount) < 12 && count_to_seconds(timeCount) > 9 &&
+	    machineMode == EXTENDED_MODE) || count_to_seconds(timeCount) < 6) {
+        return rinse_cycle_main;
+
+    } else if ((count_to_seconds(timeCount) < 15 && machineMode == EXTENDED_MODE) ||
+	    count_to_seconds(timeCount) < 9) {
+        return rinse_cycle_blink;
+    }
+    if ((count_to_seconds(timeCount) < 18 && machineMode == EXTENDED_MODE) ||
+	(count_to_seconds(timeCount) < 15 && machineMode == NORMAL_MODE)) {
+        return spin_cycle;
+    }
+
+    // All cycles are over.
+    return NULL;
+}
+
 // Event handler for the "start" button (B0 on IO board)
 ISR(INT0_vect) {
     if (!machineStarted || machineMode == CYCLES_FINISHED_MODE) {	
@@ -160,53 +219,21 @@ ISR(INT1_vect) {
     timeCount = 0;
 }
 
-// The timer triggers an interrupt every 10 milliseconds.
+// The timer triggers this interrupt every 80 milliseconds.
 ISR(TIMER1_COMPA_vect) { 
-    //set_segment_display();
     if (!machineStarted || machineMode == CYCLES_FINISHED_MODE) {
 	return; 
     }
 
-    // WASH CYCLE 
-    if (count_to_seconds(timeCount) < 3) {
-
-	OCR0B = duty_cycle_to_pulse_width(10, 255) - 1;
-	update_led_pattern(true);
-	++timeCount;
-	return;
-    } else if (count_to_seconds(timeCount) >= 3) {
-	PORTB = 0;
-    }
-
-    // RINSE CYCLE
-    if ((count_to_seconds(timeCount) < 12 && count_to_seconds(timeCount) > 9 &&
-	    machineMode == EXTENDED_MODE) || count_to_seconds(timeCount) < 6) {
-
-	OCR0B = duty_cycle_to_pulse_width(RINSE_DUTY_CYCLE, 255) - 1;
-	update_led_pattern(false);	
-	++timeCount;
-	return;
-
-    } else if ((count_to_seconds(timeCount) < 15 && machineMode == EXTENDED_MODE) ||
-	    count_to_seconds(timeCount) < 9) {
-
-	// blink for 3 seconds	
-	PORTB = (timeCount % DELAY_CONSTANT < DELAY_CONSTANT / 4) ? 0x0F : 0;
-	++timeCount;
-	return;
-    }
-
-    // SPIN CYCLE
-    if ((count_to_seconds(timeCount) < 18 && machineMode == EXTENDED_MODE) ||
-	(count_to_seconds(timeCount) < 15 && machineMode == NORMAL_MODE)) {
-
-	OCR0B = duty_cycle_to_pulse_width(SPIN_DUTY_CYCLE, 255) - 1;
-	update_led_pattern_spin();
-	++timeCount;
-	return;
+    cycleFn currentCycle = determine_cycle();
+    if (currentCycle) {
+        currentCycle(); 
+        ++timeCount;
+        return;
     }
     
-    // If it reaches this point it's because all of the cycles have finished.
+    // If it reaches this point then all of the cycles have finished.
+    PORTB = 0;
     OCR0B = 255;
     machineMode = CYCLES_FINISHED_MODE;
     machineStarted = false;
