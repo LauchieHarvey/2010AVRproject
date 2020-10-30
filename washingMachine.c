@@ -22,7 +22,7 @@ volatile uint8_t machineMode = 0;
 // This will only display one digit each iteration. The next iteration
 // it will display the other.
 void set_segment_display() {
-    sevenSegCC ^= 1; // Toggle the digit that gets displayed this iteration.
+    sevenSegCC ^= 1; // Toggle the digit that gets displayed this iteration. 
 
     // When CC == 1, it will display the water level on the right digit.
     if (machineMode == CYCLES_FINISHED_MODE) {
@@ -34,8 +34,7 @@ void set_segment_display() {
 	PORTA |= modesSeg[get_mode()];
     }
     // delay to prevent ghosting
-    for (int i = 0; i < 1000; i++);
-    PORTA = 0;
+    for (int i = 0; i < 100; i++);
     PORTA = (sevenSegCC << PA7);
 }
 
@@ -71,19 +70,19 @@ void configure_pins() {
 // direction to increment in.
 void update_led_pattern(bool runLeft) { 
     PORTB = (1 << ledArrayVal);
-    // Skip every few iterations to make it more visible.
-    if (timeCount % DELAY_CONSTANT == 0) {	
-	if (runLeft) {
-	    ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
-	} else {
-	    ledArrayVal = (ledArrayVal <= 0) ? 3 : ledArrayVal - 1;
-	}
+    // Introduce delay to make light change visible 
+    for (uint8_t i = 0; i < 100; ++i); 
+
+    if (runLeft) {
+        ledArrayVal = (ledArrayVal >= 3) ? 0 : ledArrayVal + 1;	
+    } else {
+        ledArrayVal = (ledArrayVal <= 0) ? 3 : ledArrayVal - 1;
     }
 }
 
 // Runs LEDs in right and left directions (So it bounces back and forth).
 void update_led_pattern_spin() {
-    if (timeCount % 8 * DELAY_CONSTANT < 4 * DELAY_CONSTANT ) {
+    if ((timeCount % (8 * DELAY_CONSTANT)) < (4 * DELAY_CONSTANT)) {
 	update_led_pattern(true);   
     } else {
 	update_led_pattern(false);
@@ -97,13 +96,13 @@ uint16_t duty_cycle_to_pulse_width(float dutycycle, uint16_t clockperiod) {
 }
 
 // Set up timer/counter 1 so that we get an 
-// interrupt 100 times per second, i.e. every
-// 10 milliseconds.
+// interrupt 12.5 times per second, i.e. every
+// 80 milliseconds.
 void configure_timer1() {
-    OCR1A = 9999; // Clock divided by 8 - count for 10000 cycles
+    OCR1A = 9999; // Clock divided by 64 - count for 10000 cycles
 
     TCCR1A = 0;
-    TCCR1B = (1 << WGM12 | 1 << CS11);
+    TCCR1B = (1 << WGM12 | 1 << CS11 | 1 << CS10);
 
     // Enable interrupt on timer on output compare match 
     TIMSK1 = (1 << OCIE1A); 
@@ -128,9 +127,9 @@ void configure_timer0() {
     TCCR0B = (0 << WGM02 | 0 << CS02 | 0 << CS01 | 1 << CS00);
 }
 
-// Converts the time count to seconds.
+// Converts the time count to seconds. count / (counts / second) = seconds
 uint8_t count_to_seconds(uint16_t count) {
-    return count / 100;
+    return count / 12.5;
 }
 
 int main(int argc, char** argv) {
@@ -139,7 +138,9 @@ int main(int argc, char** argv) {
     configure_timer1();
     configure_timer0();
    
-    while (1); 
+    while (1) {
+        set_segment_display();    
+    } 
     return 0;
 }
 
@@ -163,7 +164,7 @@ ISR(INT1_vect) {
 
 // The timer triggers an interrupt every 10 milliseconds.
 ISR(TIMER1_COMPA_vect) { 
-    set_segment_display();
+    //set_segment_display();
     if (!machineStarted || machineMode == CYCLES_FINISHED_MODE) {
 	return; 
     }
